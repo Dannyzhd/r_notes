@@ -23,7 +23,7 @@ getwd()
 
 Create a temporary relative path based on current working directory.
 
-```{r setup, include=FALSE}
+```{r}
 dir.create("temp_relative_path")
 
 # create a sub dir under it too.
