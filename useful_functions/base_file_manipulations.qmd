@@ -1,0 +1,189 @@
+---
+title: "File Manipulation in R"
+author: Daniel Zhang
+format:
+  html:
+    toc: true
+    toc-location: left
+    toc-depth: 4
+editor: visual
+---
+
+# base r functions to manipulate files/directories
+
+## Take a look at our working directories
+
+This is gonna be the default path
+
+```{r}
+getwd()
+```
+
+## dir.create()
+
+Create a temporary relative path based on current working directory.
+
+```{r setup, include=FALSE}
+dir.create("temp_relative_path")
+
+# create a sub dir under it too.
+dir.create(path = "temp_relative_path/temp2")
+```
+
+## dir.exists()
+
+What if we forgot if we already have the dir created?
+
+we can check by `dir.exists()` before attempting to create it.
+
+```{r}
+if(!dir.exists("temp_relative_path/temp2")){
+  dir.create("temp_relative_path/temp2")
+  } else print("Directory already exists!")
+```
+
+## list.files()
+
+Take a look at all files in current working directory.
+
+```{r}
+list.files()
+```
+
+Take a look at the files in the temporary folder we just created, which is empty.
+
+```{r}
+list.files("temp_relative_path")
+```
+
+## file.path()
+
+`file.path` helps us easily construct path by simply providing the component without worrying about pasting them with proper separator(here it is assumed to be "/")
+
+We recognize the above chunk is equivalent to this below as current working directory is by default assumed.
+
+```{r}
+(path1 <- file.path(getwd(), "temp_relative_path"))
+
+list.files(path1)
+```
+
+## dir()
+
+We also recognize that `list.files()` is basically the same as `dir()`.
+
+```{r}
+dir("temp_relative_path")
+```
+
+## file.create()
+
+Now we create some files in the empty directory.
+
+Notice by assumption it overwrites previously created file with the same path.
+
+```{r}
+file.create(... = "temp_relative_path/cool.txt")
+```
+
+Notice we can create multiple in the same time.
+
+```{r}
+file.create(... = c("temp_relative_path/cool2.txt", 
+                    "temp_relative_path/cool3.txt"))
+```
+
+if we have many files to create it is a good idea to wrap the file path before the file name
+
+```{r}
+library(tidyverse)
+# let's leverage purrr to create multiple file paths.
+
+target_path <- "temp_relative_path/"
+
+# names of files to create
+file_names_to_create <- rep("nice", 10) %>% purrr::imap_chr(~paste0(.x, .y, ".csv"))
+
+# paste the path and the names
+(files_to_create <-paste0(target_path, file_names_to_create))
+
+
+# another fun way to do so is by map_chr()
+# files_to_create <- map_chr(file_names_to_create, function(x){paste0(target_path, x)})
+```
+
+Now we create them!
+
+```{r}
+file.create(files_to_create)
+```
+
+## file.remove()
+
+Cool now let's try deleting some files, starting from cool.txt
+
+```{r}
+file.remove(... = "temp_relative_path/cool.txt")
+```
+
+We can also delete multiple in the same time.
+
+```{r}
+file.remove(... = c("temp_relative_path/cool2.txt", "temp_relative_path/nice10.csv"))
+```
+
+Wait this is too slow, can we simply delete all .csv files in this directory?\\
+
+### file.remove() + list.files()
+
+Yes we can do so by combining `list.files()` and `file.remove()` .
+
+Let's say we want to delete all files in the temp folder that contains .html or .csv
+
+```{r}
+(files_to_delete <- list.files(path = "temp_relative_path/", 
+                              pattern = ".html|.csv",
+                              full.names = T # to make sure even when they are not directly present in current working directory, we can locate them using the correct full relative location.
+                              ))
+```
+
+Then, as simply as
+
+```{r}
+file.remove(files_to_delete)
+```
+
+They are gone.
+
+Now let's try to delete the temp folder we created to wrap up this practice :D.
+
+```{r eval=FALSE}
+file.remove(... = "temp_relative_path/")
+# Warning: cannot remove file 'temp_relative_path/', reason 'Directory not empty'[1] FALSE
+```
+
+Oh no! file.remove() cannot delete folder/directories
+
+## unlink()
+
+`unlink()` is more versatile version of `file.remove()` that can delete either file or folder.
+
+```{r}
+unlink("temp_relative_path")
+```
+
+Wait, why is the folder and files still there! D:
+
+Because `unlink()` does not delete non-empty folders.
+
+Unless, we specify it to delete **recursively**
+
+```{r}
+unlink("temp_relative_path", recursive = T)
+```
+
+Now everything is gone.
+
+# Warning
+
+Everything deleted by `file.remove` and `unlink` cannot be recovered. So be extremely careful when using them. especially `file.remove` + `list.files combo` and `unlink()` with argument recursive = T.
