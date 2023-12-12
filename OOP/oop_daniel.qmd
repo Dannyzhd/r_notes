@@ -1,0 +1,197 @@
+---
+title: "OOP"
+format: html
+editor: visual
+---
+
+Daniel: I will use **Reference Classes** to demonstrate my understanding of Encapsulation, Polymorphism and Inheritance of OOP style programming.
+
+# Encapsulation
+
+In this first chunk of code I created a Ref Class Generator Food, in which I combined the **fields (attributes)** of the Class and the **methods** to operate under the class which can change the fields [together.]{.underline} This is an example of Encapsulation in OOP style.
+
+```{r}
+
+# Using setRefClass, I create a new reference based class Food
+
+Food <- setRefClass(
+  # name of the Class.  
+  Class = "Food", 
+  
+  # named list of field classes, to record the attributes of the Class
+  fields = list(
+    name = "character",
+    color = "character",
+    price ="numeric",
+    special_attribute = "character"
+    ), 
+  
+  # methods are functions that operate within the context of the object and can modify its fields.
+  methods = list(
+    
+    # This special method function will be called in the background when initializing a new object from the Ref Class Generator Food using $new()
+    # This means the argument for this function has to be supplied in order for the new object to be created(initialized)
+    # This also means I cannot provide other attributes when creating the object. I can only provide them later using $ semantic.
+    initialize = function(name, color) {
+                          name <<- stringr::str_to_upper(name)
+                          color <<- color
+                        },
+    
+    price_tag = function(){
+      print(paste0(name,": ", price, " dollars"))
+    },
+    
+    # Notice if we want to alter fields using methods function, we better use <<-
+    price_change = function(new_price){
+      price <<- new_price
+    }
+    
+  )
+)
+
+# apple = Food$new(name = "Apple", color = "Red", price = 0.99)
+
+# The new(Class, ...) function creates a instance of the Class.
+apple <- Food$new(name ="Apple", color = "red")
+
+# I can then change the other fields using $ semantic.
+apple$price <- 0.99
+apple
+
+
+# I can use the method using $ semantic as well.
+apple$price_tag()
+
+# method allows me to change the field.
+apple$price_change(2.99)
+apple$price_tag()
+
+# Notice the Ref Class Object is mutable!! the usual R copy on modify semantics do not apply
+# Meaning when I assign the object to a different name, no extra copy will be created. Instead, all changes would impact the same object, no matter its name in R.
+my_breakfast <- apple
+my_breakfast$price <- 30
+
+apple$price_tag()
+my_breakfast$price_tag()
+```
+
+My methods, price_tag and price_change respectively shows the field price and change it. This is Encapsulation in my understanding, to bind the fields and methods to change them together in the Class.
+
+# Inheritance:
+
+Here I will define one more class [Fruit]{.underline}, which takes the Class [Food]{.underline} as its superclass(or parent class I guess). The relationship means that Fruit will **inherit** both the **fields** and **methods** from the parent Class
+
+```{r}
+
+Fruit <- setRefClass(
+  Class = "Fruit", 
+  
+  # Vector of superclass(es). fields and methods will be inheritaed.
+  contains = "Food",
+  
+  # unique fields of Fruit Class.
+  fields = list(sweetness_degree = "numeric",
+                juiciness = "character"),
+  
+ 
+  methods = list(
+     # The exactg set of attributes we require when creating a new object of Fruit Class.
+    initialize = function(name, 
+                          color,
+                          sweetness_degree,
+                          juiciness,
+                          price) {
+      # callSuper means we take the definition of field named from the superClass.
+      # The arguments to $callSuper are passed to the superclass version.
+      # in our case, name value we feed into $new is fed into initialize >>>>>>>> to callSuper >>>>>>>> initialize() in the super Class Food, where the name is turned into upper case. 
+      callSuper(name = name,  color = color)
+      
+      # for price we do not pass it to super Class initialize.
+      # Instead we take it as it is in current Class initialize.
+      price <<- price
+      sweetness_degree <<- sweetness_degree
+      juiciness <<- juiciness
+    },
+    
+    
+    fruit_taste = function(){
+      print(paste0("The fruit ", name, " tastes ", juiciness, " and has a sweetness of degree ", sweetness_degree))
+    },
+    
+    perish = function(new_sweetness_degree = 0, price_drop = 5){
+      print(paste0("The fruit perished and the sweetness degree dropped to ", new_sweetness_degree))
+      sweetness_degree <<- new_sweetness_degree
+      
+      print(paste0("The price also dropped to ", price - price_drop))
+      price <<- price - price_drop
+    }
+  )
+)
+
+# Now I can define a object of Class Fruit.
+fruit1 <- Fruit$new(name = "Banana", color = "yellow", juiciness = "dry", sweetness_degree = 5, price = 0.99)
+
+# We can see the field and method of the super Class is inherited here.
+# Notice even the field not included in the initial() from superClass, "special_attribute" is also inherited.
+fruit1
+fruit1$price_tag()
+fruit1$price_change(100)
+
+fruit1$fruit_taste()
+fruit1$perish(new_sweetness_degree = -2, price_drop = 2)
+fruit1$perish()
+
+
+fruit1$price_tag()
+fruit1$fruit_taste()
+```
+
+### Reference: 
+
+[r-universe, package methods](https://r-universe.dev/manuals/methods.html#refClass)
+
+`$callSuper(...)`
+
+:   Calls the method inherited from a reference superclass. The call is meaningful only from within another method, and will be resolved to call the inherited method of the same name. The arguments to `$callSuper` are passed to the superclass version. See the matrix viewer class in the example.
+
+    Note that the intended arguments for the superclass method must be supplied explicitly; there is no convention for supplying the arguments automatically, in contrast to the similar mechanism for functional methods.
+
+# Polymorphism
+
+Finally I will define one more child Class of Food: Class Vegetable. Then we can see two functions of the same name behave differently depending on which Class invokes the name.
+
+```{r}
+
+Vegetable <- setRefClass(
+  Class = "Vegetable",
+  contains = "Food",
+
+  methods = list(
+    initialize = function(name,
+               color){
+      callSuper(name = name, color = color)
+    },
+    
+    perish = function(){
+      print(paste0("The vegetable ", name ," perished and cannot be eaten "))
+
+      print(paste0("The price also dropped to 0."))
+      price <<- 0
+    }
+    
+  )
+  
+)
+
+
+vegetable1 <- Vegetable$new(name = "Lettuce", color = "green")
+vegetable1$price <- 3
+
+vegetable1
+
+# We can notice the difference of the two object calling the "same" function.
+vegetable1$perish()
+fruit1$perish()
+
+vegetable1
+```
