@@ -1,7 +1,9 @@
 ---
-title: "OOP"
-format: html
-editor: visual
+title: "My document"
+format:
+  html:
+    theme: united
+    max-width: 5000px
 ---
 
 Daniel: I will use **Reference Classes** to demonstrate my understanding of Encapsulation, Polymorphism and Inheritance of OOP style programming.

@@ -1,6 +1,3 @@
-
-
-
 # calculate the mean of numeric columns of penguins?
 library(palmerpenguins)
 library(tidyverse)
